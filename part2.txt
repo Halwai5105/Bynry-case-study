@@ -1,0 +1,75 @@
+-- 1. Company Table
+CREATE TABLE Company (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+-- 2. Warehouse Table
+CREATE TABLE Warehouse (
+    id SERIAL PRIMARY KEY,
+    company_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(255),
+    FOREIGN KEY (company_id) REFERENCES Company(id) ON DELETE CASCADE
+);
+
+-- 3. Product Table (with threshold)
+CREATE TABLE Product (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    sku VARCHAR(100) UNIQUE NOT NULL,
+    price DECIMAL(10, 2) CHECK (price > 0),
+    is_bundle BOOLEAN DEFAULT FALSE,
+    threshold INT DEFAULT 10 CHECK (threshold >= 0) -- NEW
+);
+
+-- 4. Inventory Table
+CREATE TABLE Inventory (
+    id SERIAL PRIMARY KEY,
+    product_id INT NOT NULL,
+    warehouse_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity >= 0),
+    UNIQUE(product_id, warehouse_id),
+    FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE CASCADE,
+    FOREIGN KEY (warehouse_id) REFERENCES Warehouse(id) ON DELETE CASCADE
+);
+
+-- 5. Supplier Table
+CREATE TABLE Supplier (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    contact VARCHAR(20),
+    company_id INT,
+    FOREIGN KEY (company_id) REFERENCES Company(id) ON DELETE SET NULL
+);
+
+-- 6. SupplierProduct Table
+CREATE TABLE SupplierProduct (
+    supplier_id INT NOT NULL,
+    product_id INT NOT NULL,
+    PRIMARY KEY (supplier_id, product_id),
+    FOREIGN KEY (supplier_id) REFERENCES Supplier(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE CASCADE
+);
+
+-- 7. Bundle_Product Table
+CREATE TABLE Bundle_Product (
+    bundle_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    PRIMARY KEY (bundle_id, product_id),
+    FOREIGN KEY (bundle_id) REFERENCES Product(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES Product(id) ON DELETE CASCADE
+);
+
+-- 8. Sales Table (for recent sales tracking)
+CREATE TABLE Sales (
+    id SERIAL PRIMARY KEY,
+    product_id INT NOT NULL REFERENCES Product(id) ON DELETE CASCADE,
+    warehouse_id INT NOT NULL REFERENCES Warehouse(id) ON DELETE CASCADE,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    sale_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
